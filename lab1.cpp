@@ -63,10 +63,14 @@ public:
 class Global {
 public:
 	int xres, yres;
+  int grayscale;
+  int rotate;
 	Global() {
 		srand((unsigned)time(NULL));
 		xres = 640;
 		yres = 480;
+    grayscale = 0;
+    rotate = 0;
 	}
 } g;
 
@@ -131,6 +135,12 @@ public:
     //display windows graphic context
 		XDrawPoint(dpy, win, gc, x, y);
 	}
+
+	void drawText(int x, int y, const char *text) {
+    //display windows graphic context
+    XDrawString(dpy, win, gc, x, y, text, strlen(text));
+		
+	}
   void showImage(Image *img, int x, int y) {
     int offsetx = g.xres/2 - img->width/2;
     int offsety = g.yres/2 - img->height/2;
@@ -138,11 +148,29 @@ public:
     for (int i = 0; i<img->height; i++){
       //stepping through the width of the image loop
       for (int j = 0; j<img->width; j++){
-        int r = img->data[i*img->width*3 + j*3 + 0];
-        int g = img->data[i*img->width*3 + j*3 + 1];
-        int b = img->data[i*img->width*3 + j*3 + 2];
-        setColor3i(r, g, b);
-        drawPixel(j+offsetx, i+offsety);
+        int r1 = img->data[i*img->width*3 + j*3 + 0];
+        int g1 = img->data[i*img->width*3 + j*3 + 1];
+        int b1 = img->data[i*img->width*3 + j*3 + 2];
+        setColor3i(r1, g1, b1);
+        //checks if grayscale flag is on for black and white
+        if (g.grayscale == 1) {
+          int c = (r1+g1+b1)/3;
+          setColor3i(c, c, c);
+        }
+        if (g.rotate == 90) {
+          drawPixel(i+offsety, j+offsetx);
+        }
+        else if (g.rotate == 180) {
+          //rotates images 180 degrees using img->width-1- j+offsetx
+          drawPixel(img->width-1-j+offsetx, img->height-1- i+offsety);
+        }
+        else if (g.rotate == 270) {
+          //rotates images 180 degrees using img->width-1- j+offsetx
+          //drawPixel(img->width-1-j+offsetx, img->height-1- i+offsety);
+        }
+        else {
+          drawPixel(j+offsetx, i+offsety);
+        }
 
       }
 
@@ -214,6 +242,19 @@ int check_keys(XEvent *e)
 		case XK_Escape:
 			//program is ending
 			return 1;
+    //push g to toggle grayscape using exclusive or ^=
+    case XK_g:
+      g.grayscale ^= 1;
+      break;
+    case XK_r:
+      if (g.rotate <= 270) {
+          g.rotate += 90;
+      } else {
+        g.rotate = 0;
+      }
+     
+      break;
+
 	}
 	return 0;
 }
@@ -228,8 +269,13 @@ void render(void)
 	//render function is always at the bottom of program.
 	x11.setColor3i(255, 255, 0);
 	//x11.drawLine(100, 100, 200, 200);
-	x11.drawPixel(g.xres/2, g.yres/2);
+	//x11.drawPixel(g.xres/2, g.yres/2);
   x11.showImage(&img, g.xres/2, g.yres/2);
+
+  x11.setColor3i(0, 255, 0);
+  x11.drawText(10, 20, "Press G for grayscale");
+  x11.drawText(10, 30, "Press R to rotate");
+ // x11.drawText(40, 30, (char) g.rotate);
 }
 
 
