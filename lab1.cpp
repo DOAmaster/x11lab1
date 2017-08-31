@@ -166,6 +166,8 @@ public:
         }
         else if (g.rotate == 270) {
           //rotates images 180 degrees using img->width-1- j+offsetx
+	  //
+          drawPixel(i+offsetx, j+offsety);
           //drawPixel(img->width-1-j+offsetx, img->height-1- i+offsety);
         }
         else {
