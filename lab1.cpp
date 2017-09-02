@@ -65,12 +65,14 @@ public:
 	int xres, yres;
   int grayscale;
   int rotate;
+  int blackwhite;
 	Global() {
 		srand((unsigned)time(NULL));
 		xres = 640;
 		yres = 480;
     grayscale = 0;
     rotate = 0;
+    blackwhite = 0;
 	}
 } g;
 
@@ -90,7 +92,7 @@ public:
 		int scr = DefaultScreen(dpy);
 		win = XCreateSimpleWindow(dpy, RootWindow(dpy, scr), 1, 1,
 			g.xres, g.yres, 0, 0x00ffffff, 0x00000000);
-		XStoreName(dpy, win, "X11 sample program");
+		XStoreName(dpy, win, "DAlden Lab1 X11");
 		gc = XCreateGC(dpy, win, 0, NULL);
 		XMapWindow(dpy, win);
     //stating which events you want to track
@@ -141,6 +143,9 @@ public:
     XDrawString(dpy, win, gc, x, y, text, strlen(text));
 		
 	}
+
+	
+
   void showImage(Image *img, int x, int y) {
     int offsetx = g.xres/2 - img->width/2;
     int offsety = g.yres/2 - img->height/2;
@@ -152,6 +157,17 @@ public:
         int g1 = img->data[i*img->width*3 + j*3 + 1];
         int b1 = img->data[i*img->width*3 + j*3 + 2];
         setColor3i(r1, g1, b1);
+	//cif black and white flag is on to change colors
+	if (g.blackwhite == 1) {
+		int c = (r1+g1+b1)/3;
+		if (c >= 127) {
+			setColor3i(0,0,0);
+		} else {
+			setColor3i(255,255,255);
+		}
+  		  
+
+	}
         //checks if grayscale flag is on for black and white
         if (g.grayscale == 1) {
           int c = (r1+g1+b1)/3;
@@ -256,6 +272,9 @@ int check_keys(XEvent *e)
       }
      
       break;
+    case XK_b:
+      g.blackwhite ^= 1;
+      break;
 
 	}
 	return 0;
@@ -275,8 +294,9 @@ void render(void)
   x11.showImage(&img, g.xres/2, g.yres/2);
 
   x11.setColor3i(0, 255, 0);
-  x11.drawText(10, 20, "Press G for grayscale");
-  x11.drawText(10, 30, "Press R to rotate");
+  x11.drawText(10, 20, "G : grayscale");
+  x11.drawText(10, 30, "R : rotate");
+  x11.drawText(10, 40, "B : black&white");
  // x11.drawText(40, 30, (char) g.rotate);
 }
 
