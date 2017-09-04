@@ -19,6 +19,8 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <cstring>
+#include <stdlib.h>
 
 class Image {
 public:
@@ -167,10 +169,20 @@ public:
 	void countColors(Image *img) {
 
 	//faster method
-	char *c;
-	c = new char[8];
+	//char *c;
+//	c = new char[8];
+	std::string str(reinterpret_cast<const char* >(img->data) );
+	std::cout << "printing recasted data in string" << std::endl;
+	std::cout << str << std::endl;
+	//str = img->data;
+//	str.Format("%s",img->data);
 
 	std::vector<unsigned char> fasterVector;
+
+	//int size = img->height*3 * img->width*3;
+	int size = sizeof(img->data);
+	std::vector<char> vec(img->data, img->data + size); 
+	std::cout << "vector size FAST: " << vec.size() << std::endl;
 
 	
 	//slow method 1
@@ -180,7 +192,7 @@ public:
 
 	vector2.insert(vector2.begin(),img->data[0]+ 100);
 
-	std::cout << "vector size: " << vector2.size() << std::endl;
+	std::cout << "vector size SLOW: " << vector2.size() << std::endl;
 	std::string temp = "";
 
 	for (unsigned int i = 0; i < vector2.size(); i++) {
@@ -188,7 +200,7 @@ public:
 		temp2 = vector2[i];
 		temp += temp2;
 		}
-	std::cout << "temp: " << temp << std::endl;
+//	std::cout << "temp: " << temp << std::endl;
 
 	g.unique = 0;
 
