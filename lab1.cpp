@@ -13,6 +13,12 @@
 #include <unistd.h>
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
+#include <list>
+#include <string>
+#include <unordered_set>
+#include <iostream>
+#include <sstream>
+#include <vector>
 
 class Image {
 public:
@@ -20,7 +26,11 @@ public:
   int width;
   int height;
   unsigned char *data;
-  ~Image() { delete [] data; }
+  unsigned char *data2;
+  ~Image() { 
+	  delete [] data;
+	  delete [] data2;
+  }
   Image() {
     //opens jpeg image
     system("convert lab1.jpg lab1.ppm");
@@ -38,9 +48,13 @@ public:
       fgets(line, 250, fpi);
       //allocates memory for data
       data = new unsigned char[width * height * 3];
-      for ( int i=0; i<width*height*3; i++)
+      data2 = new unsigned char[width * height * 3];
+      for ( int i=0; i<width*height*3; i++) {
         //returns one char at a time
         data[i] = fgetc(fpi);
+	data2[i] = data[i];
+
+      }
 
 
 
@@ -66,13 +80,19 @@ public:
   int grayscale;
   int rotate;
   int blackwhite;
+  int dither;
+  int unique;
+  char colors;
 	Global() {
 		srand((unsigned)time(NULL));
 		xres = 640;
 		yres = 480;
     grayscale = 0;
     rotate = 0;
+    dither = 0;
     blackwhite = 0;
+    unique = 0;
+    colors = 0;
 	}
 } g;
 
@@ -144,6 +164,36 @@ public:
 		
 	}
 
+	void countColors(Image *img) {
+
+	//faster method
+	char *c;
+	c = new char[8];
+
+	std::vector<unsigned char> fasterVector;
+
+	
+	//slow method 1
+	std::cout << "saving vector SLOW method" << std::endl;
+	std::vector<std::string> colorVector;
+	std::vector<unsigned char> vector2;
+
+	vector2.insert(vector2.begin(),img->data[0]+ 100);
+
+	std::cout << "vector size: " << vector2.size() << std::endl;
+	std::string temp = "";
+
+	for (unsigned int i = 0; i < vector2.size(); i++) {
+		unsigned char temp2;
+		temp2 = vector2[i];
+		temp += temp2;
+		}
+	std::cout << "temp: " << temp << std::endl;
+
+	g.unique = 0;
+
+	}
+
 	
 
   void showImage(Image *img, int x, int y) {
@@ -160,10 +210,35 @@ public:
 	//cif black and white flag is on to change colors
 	if (g.blackwhite == 1) {
 		int c = (r1+g1+b1)/3;
+		double quant_error = 0;
 		if (c >= 127) {
 			setColor3i(0,0,0);
 		} else {
 			setColor3i(255,255,255);
+		}
+
+		//starts dithering if set on
+		//needs to be reworked or fixed
+		if (g.dither == 1) {
+		int oldpixel = c;
+		int newpixel = round(oldpixel / 256);
+		c = newpixel;
+		quant_error = oldpixel - newpixel;
+
+		//get next pixle and modify it
+	        r1 = img->data[i*img->width*3 + j*3 + 1];
+       		g1 = img->data[i*img->width*3 + j*3 + 2];
+        	b1 = img->data[i*img->width*3 + j*3 + 3];
+		c = (r1+g1+b1)/3;
+		c = c + quant_error * 7/16;
+
+		//	
+	        r1 = img->data[i*img->width*3 + j*3 + 2];
+       		g1 = img->data[i*img->width*3 + j*3 + 3];
+        	b1 = img->data[i*img->width*3 + j*3 + 4];
+		c = (r1+g1+b1)/3;
+		c = c + quant_error * 7/16;
+
 		}
   		  
 
@@ -173,6 +248,8 @@ public:
           int c = (r1+g1+b1)/3;
           setColor3i(c, c, c);
         }
+
+	//start drawing the pixels
         if (g.rotate == 90) {
           drawPixel(i+offsety, j+offsetx);
         }
@@ -275,6 +352,12 @@ int check_keys(XEvent *e)
     case XK_b:
       g.blackwhite ^= 1;
       break;
+    case XK_d:
+      g.dither ^=1;
+      break;
+    case XK_u:
+      g.unique ^=1;
+      break;
 
 	}
 	return 0;
@@ -297,6 +380,11 @@ void render(void)
   x11.drawText(10, 20, "G : grayscale");
   x11.drawText(10, 30, "R : rotate");
   x11.drawText(10, 40, "B : black&white");
+  x11.drawText(10, 50, "D : dither");
+  x11.drawText(10, 60, "U : unique");
+  if ( g.unique == 1) {
+	  x11.countColors(&img);
+  }
  // x11.drawText(40, 30, (char) g.rotate);
 }
 
